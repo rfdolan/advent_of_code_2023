@@ -3,7 +3,7 @@ use std::vec::Vec;
 const NUMBERS : [&str; 9] = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
 
 fn main(){
-  let vec = inp::parse_file("day01.txt");
+  let vec = inp::parse_file("inputs/day01.txt");
   solve(&vec);
 }
 
@@ -31,4 +31,14 @@ fn solve_part2(line: &String) -> u32 {
 fn solve(input: &Vec<String>) {
   println!("Part 1: {}", input.iter().fold(0, |acc, line| acc + solve_part1(line)));
   println!("Part 2: {}", input.iter().fold(0, |acc, line| acc + solve_part2(line)));
+}
+
+#[cfg(test)]
+mod day1_tests {
+  use super::*;
+  #[test]
+  fn test() {
+    assert_eq!(142, inp::parse_file("test_inputs/day01_part1_test.txt").iter().fold(0, |acc, line| acc + solve_part1(line)));
+    assert_eq!(281, inp::parse_file("test_inputs/day01_part2_test.txt").iter().fold(0, |acc, line| acc + solve_part2(line)));
+  }
 }
