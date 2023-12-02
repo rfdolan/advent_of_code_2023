@@ -5,7 +5,6 @@ const PART1_GREENMAX: i32 = 13;
 const PART1_BLUEMAX: i32 = 14;
 
 // RGB
-#[derive (Copy, Clone)]
 struct Draw(i32, i32, i32);
 
 fn main(){
