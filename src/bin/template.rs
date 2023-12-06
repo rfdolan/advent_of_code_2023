@@ -1,7 +1,7 @@
 use std::vec::Vec;
 
 fn main(){
-  let vec = inp::parse_file("xxx.txt");
+  let vec = inp::parse_file("inputs/xxx.txt");
   // Put the code to do the thing here
   println!("Part 1: {}", solve_part1(&vec));
   println!("Part 2: {}", solve_part2(&vec));
