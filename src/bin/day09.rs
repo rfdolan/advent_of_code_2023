@@ -51,16 +51,16 @@ fn solve_part2(input: &Vec<String>) -> i32 {
   let mut grand_total = 0;
   for line in input {
     let mut nums = line.split(" ").into_iter().map(|x| x.parse::<i32>().unwrap()).collect::<Vec<_>>();
-    let mut final_nums = Vec::new();
-    final_nums.push(nums[0]);
+    let mut first_nums = Vec::new();
+    first_nums.push(nums[0]);
     while !has_all_zeroes(&nums) {
       nums = check_multiple(&nums);
-      final_nums.push(nums[0]);
+      first_nums.push(nums[0]);
     }
-    final_nums.reverse();
+    first_nums.reverse();
     let mut last = 0;
-    for n in final_nums {
-      let next_num = n + last;
+    for n in first_nums {
+      let next_num = n - last;
       last = next_num;
     }
     grand_total += last;
