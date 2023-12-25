@@ -173,7 +173,7 @@ fn solve_part2(input: &Vec<String>) -> i32 {
 }
 
 #[cfg(test)]
-mod day3_tests {
+mod day14_tests {
   use super::*;
   #[test]
   fn test() {
