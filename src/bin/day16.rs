@@ -1,16 +1,16 @@
 use std::vec::Vec;
 use std::collections::{HashMap, HashSet};
 use std::ops::Add;
+use std::thread;
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
 struct Point {
   x: i32,
-  y:i32
+  y: i32
 }
 
 impl Add for Point {
   type Output = Self;
-
   fn add(self, other: Self) -> Self {
     Self {
       x: self.x + other.x,
@@ -19,6 +19,7 @@ impl Add for Point {
   }
 }
 
+// Bools represent whether the splitter has been activated. If true, we're in a loop so return.
 #[derive(Clone)]
 enum Mirrors {
   VerticalSplit(bool),
@@ -43,10 +44,7 @@ fn do_lazer(start: Point, direction: Point, mirrors: & mut HashMap<Point, Mirror
     match mirrors.get(&curr_point) {
       Some(mirror) => {
         match mirror {
-          Mirrors::VerticalSplit(true) => {
-            return energized;
-          },
-          Mirrors::HorizontalSplit(true) => {
+          Mirrors::VerticalSplit(true) | Mirrors::HorizontalSplit(true) => {
             return energized;
           },
           Mirrors::VerticalSplit(false) => {
@@ -54,8 +52,7 @@ fn do_lazer(start: Point, direction: Point, mirrors: & mut HashMap<Point, Mirror
               mirrors.insert(curr_point, Mirrors::VerticalSplit(true));
               energized = energized.union(&do_lazer(curr_point + Point{x:0,y:1}, Point{x:0,y:1}, mirrors, size)).map(|x|*x).collect();
               energized = energized.union(&do_lazer(curr_point + Point{x:0,y:-1}, Point{x:0,y:-1}, mirrors, size)).map(|x|*x).collect();
-            } else {
-              curr_point = curr_point + curr_direction;
+              return energized;
             }
           }
           Mirrors::HorizontalSplit(false) => {
@@ -63,53 +60,20 @@ fn do_lazer(start: Point, direction: Point, mirrors: & mut HashMap<Point, Mirror
               mirrors.insert(curr_point, Mirrors::HorizontalSplit(true));
               energized = energized.union(&do_lazer(curr_point + Point{x:1,y:0}, Point{x:1,y:0}, mirrors, size)).map(|x|*x).collect();
               energized = energized.union(&do_lazer(curr_point + Point{x:-1,y:0}, Point{x:-1,y:0}, mirrors, size)).map(|x|*x).collect();
-            } else {
-              curr_point = curr_point + curr_direction;
-            }
+              return energized;
+            } 
           }
           Mirrors::DiagDownRight => {
-            match curr_direction {
-              Point{x:1,y:0} => {
-                curr_direction = Point{x:0, y:1};
-              },
-              Point{x:-1,y:0} => {
-                curr_direction = Point{x:0, y:-1};
-              },
-              Point{x:0,y:1} => {
-                curr_direction = Point{x:1, y:0};
-              },
-              Point{x:0,y:-1} => {
-                curr_direction = Point{x:-1, y:0};
-              },
-              _=>()
-            }
-            curr_point = curr_point + curr_direction;
+            curr_direction = Point{x:curr_direction.y, y:curr_direction.x};
           }
           Mirrors::DiagDownLeft => {
-            match curr_direction {
-              Point{x:1,y:0} => {
-                curr_direction = Point{x:0, y:-1};
-              },
-              Point{x:-1,y:0} => {
-                curr_direction = Point{x:0, y:1};
-              },
-              Point{x:0,y:1} => {
-                curr_direction = Point{x:-1, y:0};
-              },
-              Point{x:0,y:-1} => {
-                curr_direction = Point{x:1, y:0};
-              },
-              _=>()
-            }
-            curr_point = curr_point + curr_direction;
+            curr_direction = Point{x:-curr_direction.y, y:-curr_direction.x};
           }
         }
       },
-      None => {
-        curr_point = curr_point + curr_direction;
-      }
+      None =>  () 
     }
-
+    curr_point = curr_point + curr_direction;
   }
   energized
 }
@@ -144,14 +108,25 @@ fn solve_part2(input: &Vec<String>) -> usize {
   let mirrors = parse_mirrors(input);
   let xsize = input[0].chars().collect::<Vec<_>>().len();
   let ysize = input.len();
-  let mut max_energized = 0;
+  let mut handles = Vec::new();
+  let mut starts = Vec::new();
   for x in 0..xsize {
-    max_energized = std::cmp::max(max_energized, do_lazer(Point{x:x as i32, y:0}, Point{x:0,y:1}, &mut mirrors.clone(), (xsize, ysize)).len());
-    max_energized = std::cmp::max(max_energized, do_lazer(Point{x:x as i32, y:ysize as i32-1}, Point{x:0,y:-1}, &mut mirrors.clone(), (xsize, ysize)).len());
+    starts.push((Point{x:x as i32, y:0}, Point{x:0,y:1}));
+    starts.push((Point{x:x as i32, y:ysize as i32-1}, Point{x:0,y:-1}));
   }
   for y in 0..ysize {
-    max_energized = std::cmp::max(max_energized, do_lazer(Point{x:0, y:y as i32}, Point{x:1,y:0}, &mut mirrors.clone(), (xsize, ysize)).len());
-    max_energized = std::cmp::max(max_energized, do_lazer(Point{x:xsize as i32 - 1, y:y as i32}, Point{x:-1,y:0}, &mut mirrors.clone(), (xsize, ysize)).len());
+    starts.push((Point{x:0, y:y as i32}, Point{x:1,y:1}));
+    starts.push((Point{x:xsize as i32 - 1, y:y as i32}, Point{x:-1,y:0}));
+  }
+  for start in starts {
+    let new_mirrors = mirrors.clone();
+    handles.push(thread::spawn(move || {
+      do_lazer(start.0, start.1, &mut new_mirrors.clone(), (xsize, ysize)).len()
+    }));
+  }
+  let mut max_energized = 0;
+  for handle in handles {
+    max_energized = std::cmp::max(max_energized, handle.join().unwrap());
   }
   max_energized
 }
